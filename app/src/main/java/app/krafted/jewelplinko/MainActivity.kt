@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
             JewelPlinkoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val navController = rememberNavController()
-                    val gameViewModel: GameViewModel = viewModel()
+                    val gameViewModel: GameViewModel = viewModel(factory = GameViewModel.Factory)
                     NavHost(
                         navController = navController,
                         startDestination = "splash",
@@ -60,9 +60,17 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("result") {
+                            val state by gameViewModel.uiState.collectAsState()
                             SessionResultScreen(
-                                onBackToHome = { navController.navigate("home") { popUpTo("home") { inclusive = true } } },
-                                onPlayAgain = { navController.navigate("bet") { popUpTo("home") } }
+                                state = state,
+                                onBackToHome = {
+                                    gameViewModel.resetSession()
+                                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                                },
+                                onPlayAgain = {
+                                    gameViewModel.resetSession()
+                                    navController.navigate("bet") { popUpTo("home") }
+                                }
                             )
                         }
                         composable("leaderboard") {

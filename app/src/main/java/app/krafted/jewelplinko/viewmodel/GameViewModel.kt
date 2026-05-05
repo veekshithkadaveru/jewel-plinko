@@ -1,10 +1,20 @@
 package app.krafted.jewelplinko.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import app.krafted.jewelplinko.JewelPlinkoApplication
+import app.krafted.jewelplinko.data.db.PlinkoDao
+import app.krafted.jewelplinko.data.db.WalletEntity
+import app.krafted.jewelplinko.data.db.WinRecord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class BallResult(
     val ballIndex: Int,
@@ -29,12 +39,32 @@ data class GameUiState(
     val dailyBonusAvailable: Boolean = false
 )
 
-class GameViewModel : ViewModel() {
+class GameViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val dao: PlinkoDao =
+        (application as JewelPlinkoApplication).database.plinkoDao()
 
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
     private var aimRange: ClosedFloatingPointRange<Float> = 0f..0f
+
+    init {
+        viewModelScope.launch {
+            val wallet = dao.getWallet() ?: WalletEntity(
+                id = 0,
+                coins = 1000,
+                lastDailyBonusClaimMillis = null
+            ).also { dao.upsertWallet(it) }
+            val bestWin = dao.getBestWin()
+            _uiState.update {
+                it.copy(
+                    coinBalance = wallet.coins,
+                    bestSingleWin = bestWin?.winnings ?: 0
+                )
+            }
+        }
+    }
 
     fun startSession(bet: Int, ballPackage: Int): Boolean {
         if (bet <= 0 || ballPackage <= 0) return false
@@ -52,6 +82,14 @@ class GameViewModel : ViewModel() {
                 isSessionComplete = false,
                 isDropping = false,
                 isNewBestWin = false
+            )
+        }
+        viewModelScope.launch {
+            dao.upsertWallet(
+                WalletEntity(
+                    coins = _uiState.value.coinBalance,
+                    lastDailyBonusClaimMillis = null
+                )
             )
         }
         return true
@@ -121,6 +159,25 @@ class GameViewModel : ViewModel() {
                 isSessionComplete = remaining == 0
             )
         }
+        val state = _uiState.value
+        viewModelScope.launch {
+            dao.upsertWallet(
+                WalletEntity(
+                    coins = state.coinBalance,
+                    lastDailyBonusClaimMillis = null
+                )
+            )
+            dao.insertWin(
+                WinRecord(
+                    multiplier = multiplier,
+                    winnings = state.betAmount * multiplier,
+                    symbolDrawableRes = symbolRes,
+                    timestampMillis = System.currentTimeMillis()
+                )
+            )
+            val bestWin = dao.getBestWin()
+            _uiState.update { it.copy(bestSingleWin = bestWin?.winnings ?: it.bestSingleWin) }
+        }
     }
 
     fun resetSession() {
@@ -132,6 +189,16 @@ class GameViewModel : ViewModel() {
                 ballsDropped = 0,
                 ballsRemaining = 0
             )
+        }
+    }
+
+    companion object {
+        val Factory = viewModelFactory {
+            initializer {
+                GameViewModel(
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application
+                )
+            }
         }
     }
 }
