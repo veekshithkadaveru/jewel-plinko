@@ -10,17 +10,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import app.krafted.jewelplinko.R
 import app.krafted.jewelplinko.game.PlinkoBoardView
+import app.krafted.jewelplinko.viewmodel.GameViewModel
+import kotlinx.coroutines.delay
 
 @Composable
-fun GameScreen(onSessionComplete: () -> Unit) {
-    val boardRef = remember { arrayOfNulls<PlinkoBoardView>(1) }
+fun GameScreen(onSessionComplete: () -> Unit, vm: GameViewModel) {
+    val uiState by vm.uiState.collectAsState()
+    var boardView by remember { mutableStateOf<PlinkoBoardView?>(null) }
 
     Box(
         modifier = Modifier
@@ -31,10 +40,51 @@ fun GameScreen(onSessionComplete: () -> Unit) {
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
                 PlinkoBoardView(ctx).also { view ->
-                    boardRef[0] = view
+                    view.setOnBallLandedListener { ball ->
+                        vm.onBallLanded(
+                            ball.landedSlotIndex,
+                            view.slotMultiplierAt(ball.landedSlotIndex),
+                            ball.symbolDrawableRes
+                        )
+                    }
+                    boardView = view
                 }
             }
         )
+
+        val view = boardView
+        if (view != null) {
+            LaunchedEffect(view) {
+                while (view.aimRange().endInclusive <= 0f) {
+                    delay(16)
+                }
+                val range = view.aimRange()
+                vm.setAimRange(range)
+                vm.setAimPosition((range.start + range.endInclusive) * 0.5f)
+            }
+            LaunchedEffect(uiState.aimPosition) {
+                view.setAimX(uiState.aimPosition)
+            }
+        }
+
+        LaunchedEffect(uiState.isSessionComplete) {
+            if (uiState.isSessionComplete) onSessionComplete()
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = "Coins: ${uiState.coinBalance}", color = Color(0xFFF6C66B))
+            Text(text = "Bet: ${uiState.betAmount}", color = Color.White)
+            Text(
+                text = "Balls: ${uiState.ballsDropped}/${uiState.ballPackage}",
+                color = Color.White
+            )
+        }
 
         Row(
             modifier = Modifier
@@ -44,18 +94,27 @@ fun GameScreen(onSessionComplete: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Button(onClick = {
-                val v = boardRef[0] ?: return@Button
-                v.nudgeAim(-v.width * 0.06f)
-            }) { Text("◀ AIM") }
+                val v = boardView ?: return@Button
+                val stepPx = v.width * 0.06f
+                vm.nudgeAim(-stepPx)
+            }) { Text("AIM <") }
+
+            Button(
+                enabled = !uiState.isDropping && uiState.ballsRemaining > 0,
+                onClick = {
+                    val v = boardView ?: return@Button
+                    if (!vm.canDrop()) return@Button
+                    if (v.dropBall(symbolRes = R.drawable.plin_sym_1)) {
+                        vm.confirmDropStarted()
+                    }
+                }
+            ) { Text("DROP") }
 
             Button(onClick = {
-                boardRef[0]?.dropBall()
-            }) { Text("DROP") }
-
-            Button(onClick = {
-                val v = boardRef[0] ?: return@Button
-                v.nudgeAim(v.width * 0.06f)
-            }) { Text("AIM ▶") }
+                val v = boardView ?: return@Button
+                val stepPx = v.width * 0.06f
+                vm.nudgeAim(stepPx)
+            }) { Text("AIM >") }
         }
     }
 }

@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.krafted.jewelplinko.ui.*
 import app.krafted.jewelplinko.ui.theme.JewelPlinkoTheme
+import app.krafted.jewelplinko.viewmodel.GameViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +24,7 @@ class MainActivity : ComponentActivity() {
             JewelPlinkoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val navController = rememberNavController()
+                    val gameViewModel: GameViewModel = viewModel()
                     NavHost(
                         navController = navController,
                         startDestination = "splash",
@@ -37,10 +40,19 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("bet") {
-                            BetScreen(onStartSession = { navController.navigate("game") })
+                            BetScreen(
+                                onStartSession = {
+                                    if (gameViewModel.startSession(bet = 50, ballPackage = 1)) {
+                                        navController.navigate("game")
+                                    }
+                                }
+                            )
                         }
                         composable("game") {
-                            GameScreen(onSessionComplete = { navController.navigate("result") })
+                            GameScreen(
+                                onSessionComplete = { navController.navigate("result") },
+                                vm = gameViewModel
+                            )
                         }
                         composable("result") {
                             SessionResultScreen(

@@ -15,6 +15,7 @@ import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import androidx.core.content.res.ResourcesCompat
 import app.krafted.jewelplinko.R
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.max
@@ -47,6 +48,7 @@ class PlinkoBoardView @JvmOverloads constructor(
     private var aimRange: ClosedFloatingPointRange<Float> = 0f..0f
 
     private var backgroundBitmap: Bitmap? = null
+    private var pegBitmap: Bitmap? = null
     private val symbolBitmaps = HashMap<Int, Bitmap>()
 
     private val srcRect = Rect()
@@ -102,6 +104,8 @@ class PlinkoBoardView @JvmOverloads constructor(
 
     fun activeBallCount(): Int = balls.count { !it.landed }
 
+    fun slotMultiplierAt(index: Int): Int = slots.getOrNull(index)?.multiplier ?: 0
+
     fun dropBall(symbolRes: Int = R.drawable.plin_sym_1): Boolean {
         val w = boardWidth
         val h = boardHeight
@@ -156,6 +160,8 @@ class PlinkoBoardView @JvmOverloads constructor(
     private fun rebuildBitmaps(width: Int, height: Int) {
         recycleBitmaps()
         backgroundBitmap = decodeAndScale(R.drawable.bg_game, width, height)
+        val pegSize = (BoardLayout.pegRadius(boardWidth) * 2.6f).toInt().coerceAtLeast(1)
+        pegBitmap = decodeAndScale(R.drawable.peg_bitmap, pegSize, pegSize)
         val symbolSize = (BoardLayout.ballRadius(boardWidth) * 2f).toInt().coerceAtLeast(1)
         val symbolRes = intArrayOf(
             R.drawable.plin_sym_1,
@@ -167,20 +173,33 @@ class PlinkoBoardView @JvmOverloads constructor(
             R.drawable.plin_sym_7
         )
         for (res in symbolRes) {
-            symbolBitmaps[res] = decodeAndScale(res, symbolSize, symbolSize)
+            decodeAndScale(res, symbolSize, symbolSize)?.let { symbolBitmaps[res] = it }
         }
     }
 
-    private fun decodeAndScale(resId: Int, w: Int, h: Int): Bitmap {
+    private fun decodeAndScale(resId: Int, w: Int, h: Int): Bitmap? {
+        val outWidth = max(w, 1)
+        val outHeight = max(h, 1)
         val raw = BitmapFactory.decodeResource(resources, resId)
-        return Bitmap.createScaledBitmap(raw, max(w, 1), max(h, 1), true).also {
-            if (it !== raw) raw.recycle()
+        if (raw != null) {
+            return Bitmap.createScaledBitmap(raw, outWidth, outHeight, true).also {
+                if (it !== raw) raw.recycle()
+            }
         }
+
+        val drawable = ResourcesCompat.getDrawable(resources, resId, null) ?: return null
+        val bitmap = Bitmap.createBitmap(outWidth, outHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, outWidth, outHeight)
+        drawable.draw(canvas)
+        return bitmap
     }
 
     private fun recycleBitmaps() {
         backgroundBitmap?.recycle()
         backgroundBitmap = null
+        pegBitmap?.recycle()
+        pegBitmap = null
         for (b in symbolBitmaps.values) b.recycle()
         symbolBitmaps.clear()
     }
@@ -268,19 +287,31 @@ class PlinkoBoardView @JvmOverloads constructor(
 
     private fun drawPegs(canvas: Canvas) {
         for (peg in pegs) {
-            val shader = RadialGradient(
-                peg.x - peg.radius * 0.35f,
-                peg.y - peg.radius * 0.35f,
-                peg.radius * 1.6f,
-                Color.WHITE,
-                Color.parseColor("#7AA9FF"),
-                Shader.TileMode.CLAMP
-            )
-            pegBasePaint.shader = shader
-            canvas.drawCircle(peg.x, peg.y, peg.radius, pegBasePaint)
-            pegBasePaint.shader = null
-            canvas.drawCircle(peg.x, peg.y, peg.radius, pegRimPaint)
+            val bitmap = pegBitmap
+            if (bitmap != null) {
+                val r = peg.radius * 1.3f
+                srcRect.set(0, 0, bitmap.width, bitmap.height)
+                dstRect.set(peg.x - r, peg.y - r, peg.x + r, peg.y + r)
+                canvas.drawBitmap(bitmap, srcRect, dstRect, null)
+            } else {
+                drawFallbackPeg(canvas, peg)
+            }
         }
+    }
+
+    private fun drawFallbackPeg(canvas: Canvas, peg: Peg) {
+        val shader = RadialGradient(
+            peg.x - peg.radius * 0.35f,
+            peg.y - peg.radius * 0.35f,
+            peg.radius * 1.6f,
+            Color.WHITE,
+            Color.parseColor("#7AA9FF"),
+            Shader.TileMode.CLAMP
+        )
+        pegBasePaint.shader = shader
+        canvas.drawCircle(peg.x, peg.y, peg.radius, pegBasePaint)
+        pegBasePaint.shader = null
+        canvas.drawCircle(peg.x, peg.y, peg.radius, pegRimPaint)
     }
 
     private fun drawAimIndicator(canvas: Canvas) {
