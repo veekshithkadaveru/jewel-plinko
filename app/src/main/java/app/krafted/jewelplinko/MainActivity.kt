@@ -7,6 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -40,12 +42,15 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("bet") {
+                            val state by gameViewModel.uiState.collectAsState()
                             BetScreen(
-                                onStartSession = {
-                                    if (gameViewModel.startSession(bet = 50, ballPackage = 1)) {
+                                coinBalance = state.coinBalance,
+                                onStartSession = { bet, ballPackage ->
+                                    if (gameViewModel.startSession(bet = bet, ballPackage = ballPackage)) {
                                         navController.navigate("game")
                                     }
-                                }
+                                },
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable("game") {
