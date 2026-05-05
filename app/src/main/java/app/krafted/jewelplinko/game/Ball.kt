@@ -8,5 +8,6 @@ class Ball(
     val radius: Float,
     val symbolDrawableRes: Int,
     var landed: Boolean = false,
-    var landedSlotIndex: Int = -1
+    var landedSlotIndex: Int = -1,
+    var landedAtNanos: Long = 0L
 )
