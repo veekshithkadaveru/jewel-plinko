@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +38,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.krafted.jewelplinko.viewmodel.BallResult
@@ -53,11 +58,21 @@ private val LossRed = Color(0xFFFF6B6B)
 @Composable
 fun SessionResultScreen(
     state: GameUiState,
+    onSubmitName: (String) -> Unit,
     onBackToHome: () -> Unit,
     onPlayAgain: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
+
+    var nameInput by remember(state.playerName) { mutableStateOf(state.playerName) }
+    var nameSaved by remember(state.playerName) { mutableStateOf(true) }
+    val commitName = {
+        if (nameInput.trim() != state.playerName) {
+            onSubmitName(nameInput)
+        }
+        nameSaved = true
+    }
 
     val totalSpent = state.betAmount * state.ballPackage
     val totalWon = state.sessionResults.sumOf { it.winnings }
@@ -144,6 +159,18 @@ fun SessionResultScreen(
 
                 Spacer(Modifier.height(20.dp))
 
+                NameInputCard(
+                    value = nameInput,
+                    onValueChange = {
+                        nameInput = it
+                        nameSaved = false
+                    },
+                    saved = nameSaved,
+                    onSave = commitName
+                )
+
+                Spacer(Modifier.height(16.dp))
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -212,7 +239,10 @@ fun SessionResultScreen(
                                     listOf(Gold, Color(0xFFE8A928))
                                 )
                             )
-                            .clickable { onPlayAgain() },
+                            .clickable {
+                                commitName()
+                                onPlayAgain()
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -231,7 +261,10 @@ fun SessionResultScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(CardBackground)
                             .border(1.5.dp, Gold.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
-                            .clickable { onBackToHome() },
+                            .clickable {
+                                commitName()
+                                onBackToHome()
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -289,6 +322,91 @@ private fun BallResultRow(result: BallResult) {
             modifier = Modifier.weight(1f),
             textAlign = androidx.compose.ui.text.style.TextAlign.End
         )
+    }
+}
+
+@Composable
+private fun NameInputCard(
+    value: String,
+    onValueChange: (String) -> Unit,
+    saved: Boolean,
+    onSave: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardBackground)
+            .border(1.dp, Gold.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+    ) {
+        Column {
+            Text(
+                text = "YOUR NAME",
+                color = GoldDark,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 2.sp
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(DeepBackground)
+                        .border(1.dp, Gold.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    BasicTextField(
+                        value = value,
+                        onValueChange = { onValueChange(it.take(16)) },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = GoldShimmer,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        cursorBrush = Brush.verticalGradient(listOf(Gold, Gold)),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onSave() }),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                Spacer(Modifier.size(12.dp))
+                val saveBg: Modifier = if (saved) {
+                    Modifier.background(CardBackground)
+                } else {
+                    Modifier.background(
+                        Brush.horizontalGradient(listOf(Gold, Color(0xFFE8A928)))
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .then(saveBg)
+                        .border(
+                            1.5.dp,
+                            Gold.copy(alpha = if (saved) 0.4f else 0f),
+                            RoundedCornerShape(10.dp)
+                        )
+                        .clickable(enabled = !saved) { onSave() }
+                        .padding(horizontal = 18.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (saved) "SAVED" else "SAVE",
+                        color = if (saved) GoldDark else DeepBackground,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    )
+                }
+            }
+        }
     }
 }
 

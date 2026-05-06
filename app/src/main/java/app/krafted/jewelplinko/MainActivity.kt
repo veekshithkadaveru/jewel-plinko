@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
                             val state by gameViewModel.uiState.collectAsState()
                             SessionResultScreen(
                                 state = state,
+                                onSubmitName = { gameViewModel.submitPlayerName(it) },
                                 onBackToHome = {
                                     gameViewModel.resetSession()
                                     navController.navigate("home") {
@@ -96,7 +97,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("leaderboard") {
-                            LeaderboardScreen(onBack = { navController.popBackStack() })
+                            LeaderboardScreen(
+                                vm = gameViewModel,
+                                onBack = { navController.popBackStack() }
+                            )
                         }
                     }
                 }

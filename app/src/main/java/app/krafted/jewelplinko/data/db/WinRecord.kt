@@ -9,5 +9,6 @@ data class WinRecord(
     val multiplier: Int,
     val winnings: Int,
     val symbolDrawableRes: Int,
-    val timestampMillis: Long
+    val timestampMillis: Long,
+    val playerName: String = "Player"
 )

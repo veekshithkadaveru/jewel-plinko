@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class WalletEntity(
     @PrimaryKey val id: Int = 0,
     val coins: Int,
-    val lastDailyBonusClaimMillis: Long?
+    val lastDailyBonusClaimMillis: Long?,
+    val playerName: String = "Player"
 )

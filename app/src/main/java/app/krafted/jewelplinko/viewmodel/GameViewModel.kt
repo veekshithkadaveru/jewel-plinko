@@ -36,7 +36,8 @@ data class GameUiState(
     val isSessionComplete: Boolean = false,
     val bestSingleWin: Int = 0,
     val isNewBestWin: Boolean = false,
-    val dailyBonusAvailable: Boolean = false
+    val dailyBonusAvailable: Boolean = false,
+    val playerName: String = "Player"
 )
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -47,7 +48,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
+    private val _topWins = MutableStateFlow<List<WinRecord>>(emptyList())
+    val topWins: StateFlow<List<WinRecord>> = _topWins.asStateFlow()
+
     private var aimRange: ClosedFloatingPointRange<Float> = 0f..0f
+
+    private val currentSessionWinIds = mutableListOf<Long>()
 
     init {
         viewModelScope.launch {
@@ -60,7 +66,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update {
                 it.copy(
                     coinBalance = wallet.coins,
-                    bestSingleWin = bestWin?.winnings ?: 0
+                    bestSingleWin = bestWin?.winnings ?: 0,
+                    playerName = wallet.playerName
                 )
             }
         }
@@ -71,6 +78,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val cost = bet * ballPackage
         val current = _uiState.value
         if (cost > current.coinBalance) return false
+        currentSessionWinIds.clear()
         _uiState.update {
             it.copy(
                 coinBalance = it.coinBalance - cost,
@@ -88,7 +96,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             dao.upsertWallet(
                 WalletEntity(
                     coins = _uiState.value.coinBalance,
-                    lastDailyBonusClaimMillis = null
+                    lastDailyBonusClaimMillis = null,
+                    playerName = _uiState.value.playerName
                 )
             )
         }
@@ -164,19 +173,46 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             dao.upsertWallet(
                 WalletEntity(
                     coins = state.coinBalance,
-                    lastDailyBonusClaimMillis = null
+                    lastDailyBonusClaimMillis = null,
+                    playerName = state.playerName
                 )
             )
-            dao.insertWin(
+            val winId = dao.insertWin(
                 WinRecord(
                     multiplier = multiplier,
                     winnings = state.betAmount * multiplier,
                     symbolDrawableRes = symbolRes,
-                    timestampMillis = System.currentTimeMillis()
+                    timestampMillis = System.currentTimeMillis(),
+                    playerName = state.playerName
                 )
             )
+            currentSessionWinIds.add(winId)
             val bestWin = dao.getBestWin()
             _uiState.update { it.copy(bestSingleWin = bestWin?.winnings ?: it.bestSingleWin) }
+        }
+    }
+
+    fun submitPlayerName(name: String) {
+        val trimmed = name.trim().ifEmpty { "Player" }.take(16)
+        _uiState.update { it.copy(playerName = trimmed) }
+        val sessionIds = currentSessionWinIds.toList()
+        viewModelScope.launch {
+            dao.upsertWallet(
+                WalletEntity(
+                    coins = _uiState.value.coinBalance,
+                    lastDailyBonusClaimMillis = null,
+                    playerName = trimmed
+                )
+            )
+            if (sessionIds.isNotEmpty()) {
+                dao.updatePlayerNameForIds(sessionIds, trimmed)
+            }
+        }
+    }
+
+    fun loadLeaderboard() {
+        viewModelScope.launch {
+            _topWins.value = dao.getTopWins(20)
         }
     }
 

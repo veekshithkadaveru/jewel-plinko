@@ -26,4 +26,7 @@ interface PlinkoDao {
 
     @Query("SELECT * FROM win_records ORDER BY winnings DESC LIMIT :limit")
     suspend fun getTopWins(limit: Int): List<WinRecord>
+
+    @Query("UPDATE win_records SET playerName = :name WHERE id IN (:ids)")
+    suspend fun updatePlayerNameForIds(ids: List<Long>, name: String)
 }
