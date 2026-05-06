@@ -33,10 +33,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.krafted.jewelplinko.R
 
 private val DeepBackground = Color(0xFF0B0220)
 private val CardBackground = Color(0xFF160833)
@@ -74,7 +78,7 @@ fun BetScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "💎 $coinBalance",
+                text = stringResource(R.string.coins_format, coinBalance),
                 color = Gold,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold
@@ -83,7 +87,7 @@ fun BetScreen(
             Spacer(Modifier.height(32.dp))
 
             Text(
-                text = "PLACE YOUR BET",
+                text = stringResource(R.string.bet_title),
                 color = GoldShimmer,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
@@ -105,7 +109,7 @@ fun BetScreen(
 
             Spacer(Modifier.height(40.dp))
 
-            SectionLabel("BET AMOUNT")
+            SectionLabel(stringResource(R.string.bet_amount_label))
             Spacer(Modifier.height(12.dp))
 
             Row(
@@ -117,6 +121,7 @@ fun BetScreen(
                 val leftScale by animateFloatAsState(
                     if (pressed) 0.85f else 1f, tween(100), label = "ls"
                 )
+                val decDesc = stringResource(R.string.bet_decrease_desc)
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -127,7 +132,8 @@ fun BetScreen(
                         .clickable(interactionSource = interactionSource, indication = null) {
                             selectedBetIndex =
                                 (selectedBetIndex - 1 + BetOptions.size) % BetOptions.size
-                        },
+                        }
+                        .semantics { contentDescription = decDesc },
                     contentAlignment = Alignment.Center
                 ) {
                     Text("◀", color = Gold, fontSize = 18.sp)
@@ -170,6 +176,7 @@ fun BetScreen(
                 val rightScale by animateFloatAsState(
                     if (rightPressed) 0.85f else 1f, tween(100), label = "rs"
                 )
+                val incDesc = stringResource(R.string.bet_increase_desc)
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -179,7 +186,8 @@ fun BetScreen(
                         .border(1.dp, Gold.copy(alpha = 0.4f), CircleShape)
                         .clickable(interactionSource = rightInteraction, indication = null) {
                             selectedBetIndex = (selectedBetIndex + 1) % BetOptions.size
-                        },
+                        }
+                        .semantics { contentDescription = incDesc },
                     contentAlignment = Alignment.Center
                 ) {
                     Text("▶", color = Gold, fontSize = 18.sp)
@@ -188,7 +196,7 @@ fun BetScreen(
 
             Spacer(Modifier.height(36.dp))
 
-            SectionLabel("BALL PACKAGE")
+            SectionLabel(stringResource(R.string.bet_package_label))
             Spacer(Modifier.height(12.dp))
 
             Row(
@@ -228,7 +236,9 @@ fun BetScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = if (count == 1) "BALL" else "BALLS",
+                            text = if (count == 1) stringResource(R.string.bet_ball_singular) else stringResource(
+                                R.string.bet_balls_plural
+                            ),
                             color = textColor.copy(alpha = 0.7f),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
@@ -260,16 +270,34 @@ fun BetScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Bet per ball", color = DimWhite, fontSize = 14.sp)
-                        Text("$bet", color = Gold, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            stringResource(R.string.bet_per_ball_label),
+                            color = DimWhite,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "$bet",
+                            color = Gold,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Balls", color = DimWhite, fontSize = 14.sp)
-                        Text("×$selectedBallPackage", color = Gold, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            stringResource(R.string.bet_count_label),
+                            color = DimWhite,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "×$selectedBallPackage",
+                            color = Gold,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     Spacer(Modifier.height(10.dp))
                     Box(
@@ -284,7 +312,7 @@ fun BetScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            "TOTAL COST",
+                            stringResource(R.string.bet_total_cost_label),
                             color = GoldShimmer,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -330,8 +358,14 @@ fun BetScreen(
                     ),
                 contentAlignment = Alignment.Center
             ) {
+                val buttonText = if (canAfford) {
+                    if (selectedBallPackage == 1) stringResource(R.string.bet_drop_button_singular)
+                    else stringResource(R.string.bet_drop_button_plural)
+                } else {
+                    stringResource(R.string.bet_not_enough_coins)
+                }
                 Text(
-                    text = if (canAfford) "DROP ${if (selectedBallPackage == 1) "BALL" else "BALLS"}" else "NOT ENOUGH COINS",
+                    text = buttonText,
                     color = if (canAfford) DeepBackground else Color(0xFF888888),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -341,17 +375,21 @@ fun BetScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            Text(
-                text = "BACK",
-                color = GoldDark,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 1.sp,
-                textAlign = TextAlign.Center,
+            Box(
                 modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable { onBack() }
-                    .padding(8.dp)
-            )
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.back_button),
+                    color = GoldDark,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 1.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

@@ -38,11 +38,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.krafted.jewelplinko.R
 import app.krafted.jewelplinko.viewmodel.BallResult
 import app.krafted.jewelplinko.viewmodel.GameUiState
 
@@ -94,7 +96,7 @@ fun SessionResultScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "SESSION COMPLETE",
+                    text = stringResource(R.string.result_title),
                     color = GoldShimmer,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
@@ -128,7 +130,7 @@ fun SessionResultScreen(
                             .padding(horizontal = 20.dp, vertical = 8.dp)
                     ) {
                         Text(
-                            text = "NEW BEST WIN!",
+                            text = stringResource(R.string.result_new_best),
                             color = DeepBackground,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
@@ -180,9 +182,9 @@ fun SessionResultScreen(
                         .padding(20.dp)
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        TotalRow("Total spent", "$totalSpent", Gold)
+                        TotalRow(stringResource(R.string.result_total_spent), "$totalSpent", Gold)
                         Spacer(Modifier.height(8.dp))
-                        TotalRow("Total won", "+$totalWon", Gold)
+                        TotalRow(stringResource(R.string.result_total_won), "+$totalWon", Gold)
                         Spacer(Modifier.height(10.dp))
                         Box(
                             modifier = Modifier
@@ -197,7 +199,7 @@ fun SessionResultScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "NET",
+                                text = stringResource(R.string.result_net),
                                 color = GoldShimmer,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
@@ -246,7 +248,7 @@ fun SessionResultScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "PLAY AGAIN",
+                            text = stringResource(R.string.result_play_again),
                             color = DeepBackground,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
@@ -268,7 +270,7 @@ fun SessionResultScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "HOME",
+                            text = stringResource(R.string.result_home),
                             color = Gold,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
@@ -290,7 +292,7 @@ private fun BallResultRow(result: BallResult) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "BALL #${result.ballIndex + 1}",
+            text = stringResource(R.string.result_ball_label, result.ballIndex + 1),
             color = GoldDark,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
@@ -300,7 +302,7 @@ private fun BallResultRow(result: BallResult) {
 
         Image(
             painter = painterResource(result.symbolDrawableRes),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.result_symbol_desc),
             modifier = Modifier.size(32.dp)
         )
 
@@ -342,7 +344,7 @@ private fun NameInputCard(
     ) {
         Column {
             Text(
-                text = "YOUR NAME",
+                text = stringResource(R.string.result_your_name_label),
                 color = GoldDark,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -398,7 +400,9 @@ private fun NameInputCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (saved) "SAVED" else "SAVE",
+                        text = if (saved) stringResource(R.string.result_saved_button) else stringResource(
+                            R.string.result_save_button
+                        ),
                         color = if (saved) GoldDark else DeepBackground,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,

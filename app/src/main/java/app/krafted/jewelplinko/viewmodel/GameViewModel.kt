@@ -37,7 +37,9 @@ data class GameUiState(
     val bestSingleWin: Int = 0,
     val isNewBestWin: Boolean = false,
     val dailyBonusAvailable: Boolean = false,
-    val playerName: String = "Player"
+    val playerName: String = "Player",
+    val isDataLoaded: Boolean = false,
+    val lastDailyBonusClaimMillis: Long? = null
 )
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -62,12 +64,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 coins = 1000,
                 lastDailyBonusClaimMillis = null
             ).also { dao.upsertWallet(it) }
+            val now = System.currentTimeMillis()
+            val bonusAvailable =
+                wallet.lastDailyBonusClaimMillis == null || (now - wallet.lastDailyBonusClaimMillis > 24 * 60 * 60 * 1000)
             val bestWin = dao.getBestWin()
             _uiState.update {
                 it.copy(
                     coinBalance = wallet.coins,
                     bestSingleWin = bestWin?.winnings ?: 0,
-                    playerName = wallet.playerName
+                    playerName = wallet.playerName,
+                    lastDailyBonusClaimMillis = wallet.lastDailyBonusClaimMillis,
+                    dailyBonusAvailable = bonusAvailable,
+                    isDataLoaded = true
                 )
             }
         }
@@ -96,7 +104,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             dao.upsertWallet(
                 WalletEntity(
                     coins = _uiState.value.coinBalance,
-                    lastDailyBonusClaimMillis = null,
+                    lastDailyBonusClaimMillis = _uiState.value.lastDailyBonusClaimMillis,
                     playerName = _uiState.value.playerName
                 )
             )
@@ -173,7 +181,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             dao.upsertWallet(
                 WalletEntity(
                     coins = state.coinBalance,
-                    lastDailyBonusClaimMillis = null,
+                    lastDailyBonusClaimMillis = state.lastDailyBonusClaimMillis,
                     playerName = state.playerName
                 )
             )
@@ -200,7 +208,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             dao.upsertWallet(
                 WalletEntity(
                     coins = _uiState.value.coinBalance,
-                    lastDailyBonusClaimMillis = null,
+                    lastDailyBonusClaimMillis = _uiState.value.lastDailyBonusClaimMillis,
                     playerName = trimmed
                 )
             )
@@ -224,6 +232,64 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 isNewBestWin = false,
                 ballsDropped = 0,
                 ballsRemaining = 0
+            )
+        }
+    }
+
+    fun refundSession() {
+        val current = _uiState.value
+        if (current.isSessionComplete) return
+        val cost = current.betAmount * current.ballPackage
+        val refunded = current.coinBalance + cost
+        _uiState.update { it.copy(coinBalance = refunded) }
+        viewModelScope.launch {
+            dao.upsertWallet(
+                WalletEntity(
+                    coins = refunded,
+                    lastDailyBonusClaimMillis = current.lastDailyBonusClaimMillis,
+                    playerName = current.playerName
+                )
+            )
+        }
+        resetSession()
+    }
+
+    fun claimDailyBonus() {
+        val current = _uiState.value
+        if (!current.dailyBonusAvailable) return
+        val now = System.currentTimeMillis()
+        val newBalance = current.coinBalance + 500
+        _uiState.update {
+            it.copy(
+                coinBalance = newBalance,
+                lastDailyBonusClaimMillis = now,
+                dailyBonusAvailable = false
+            )
+        }
+        viewModelScope.launch {
+            dao.upsertWallet(
+                WalletEntity(
+                    coins = newBalance,
+                    lastDailyBonusClaimMillis = now,
+                    playerName = current.playerName
+                )
+            )
+        }
+    }
+
+    fun resetBankruptAccount() {
+        val current = _uiState.value
+        val newBalance = 1000
+        _uiState.update {
+            it.copy(coinBalance = newBalance)
+        }
+        viewModelScope.launch {
+            dao.upsertWallet(
+                WalletEntity(
+                    coins = newBalance,
+                    lastDailyBonusClaimMillis = current.lastDailyBonusClaimMillis,
+                    playerName = current.playerName
+                )
             )
         }
     }

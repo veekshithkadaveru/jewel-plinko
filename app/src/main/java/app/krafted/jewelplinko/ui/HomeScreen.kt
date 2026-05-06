@@ -17,21 +17,34 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.krafted.jewelplinko.R
+import app.krafted.jewelplinko.viewmodel.GameViewModel
 
 private val DeepBackground = Color(0xFF0B0220)
 private val CardBackground = Color(0xFF160833)
@@ -42,20 +55,81 @@ private val DimWhite = Color(0xFFCCBBDD)
 
 @Composable
 fun HomeScreen(
-    coinBalance: Int,
-    bestSingleWin: Int,
+    vm: GameViewModel,
     onPlayClicked: () -> Unit,
     onLeaderboardClicked: () -> Unit
 ) {
+    val state by vm.uiState.collectAsState()
+
+    var showNamePrompt by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.isDataLoaded) {
+        if (state.isDataLoaded && state.playerName == "Player" && state.bestSingleWin == 0 && state.coinBalance == 1000) {
+            showNamePrompt = true
+        }
+    }
+
+    if (showNamePrompt) {
+        var tempName by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showNamePrompt = false },
+            containerColor = CardBackground,
+            titleContentColor = Gold,
+            textContentColor = DimWhite,
+            title = { Text(stringResource(R.string.home_enter_name_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.home_enter_name_desc))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempName,
+                        onValueChange = { if (it.length <= 16) tempName = it },
+                        label = {
+                            Text(
+                                stringResource(R.string.home_name_input_label),
+                                color = DimWhite
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Gold,
+                            unfocusedBorderColor = GoldDark,
+                            focusedTextColor = GoldShimmer,
+                            unfocusedTextColor = DimWhite,
+                            cursorColor = Gold
+                        ),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (tempName.isNotBlank()) {
+                            vm.submitPlayerName(tempName)
+                        }
+                        showNamePrompt = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Gold,
+                        contentColor = DeepBackground
+                    )
+                ) {
+                    Text(stringResource(R.string.home_save_name), fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(DeepBackground)
+            .systemBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 48.dp),
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -64,13 +138,13 @@ fun HomeScreen(
             ) {
                 StatPill(
                     emoji = "💎",
-                    label = "COINS",
-                    value = formatNumber(coinBalance)
+                    label = stringResource(R.string.home_coins_label),
+                    value = formatNumber(state.coinBalance)
                 )
                 StatPill(
                     emoji = "🏆",
-                    label = "BEST WIN",
-                    value = if (bestSingleWin <= 0) "—" else formatNumber(bestSingleWin)
+                    label = stringResource(R.string.home_best_win_label),
+                    value = if (state.bestSingleWin <= 0) "—" else formatNumber(state.bestSingleWin)
                 )
             }
 
@@ -79,15 +153,16 @@ fun HomeScreen(
             GoldDivider()
             Spacer(Modifier.height(20.dp))
             Text(
-                text = "JEWEL PLINKO",
+                text = stringResource(R.string.app_name).uppercase(),
                 color = Gold,
                 fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 4.sp
+                letterSpacing = 4.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                text = "PHYSICS GEMSTONE DROP",
+                text = stringResource(R.string.home_subtitle),
                 color = GoldDark,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -97,6 +172,76 @@ fun HomeScreen(
             GoldDivider()
 
             Spacer(Modifier.weight(1f))
+
+            if (state.dailyBonusAvailable) {
+                val bonusInteraction = remember { MutableInteractionSource() }
+                val bonusPressed by bonusInteraction.collectIsPressedAsState()
+                val bonusScale by animateFloatAsState(
+                    if (bonusPressed) 0.95f else 1f, tween(100), label = "bs"
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .scale(bonusScale)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    Color(0xFF4CD97B),
+                                    Color(0xFF28A745)
+                                )
+                            )
+                        )
+                        .clickable(interactionSource = bonusInteraction, indication = null) {
+                            vm.claimDailyBonus()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_claim_bonus),
+                        color = DeepBackground,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+            } else if (state.coinBalance == 0) {
+                val resetInteraction = remember { MutableInteractionSource() }
+                val resetPressed by resetInteraction.collectIsPressedAsState()
+                val resetScale by animateFloatAsState(
+                    if (resetPressed) 0.95f else 1f, tween(100), label = "rs"
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .scale(resetScale)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    Color(0xFFFF6B6B),
+                                    Color(0xFFD94C4C)
+                                )
+                            )
+                        )
+                        .clickable(interactionSource = resetInteraction, indication = null) {
+                            vm.resetBankruptAccount()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_reset_account),
+                        color = DeepBackground,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+            }
 
             val playInteraction = remember { MutableInteractionSource() }
             val playPressed by playInteraction.collectIsPressedAsState()
@@ -119,7 +264,7 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "PLAY",
+                    text = stringResource(R.string.home_play_button),
                     color = DeepBackground,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
@@ -129,16 +274,21 @@ fun HomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = "LEADERBOARD",
-                color = GoldDark,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 2.sp,
+            Box(
                 modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable { onLeaderboardClicked() }
-                    .padding(8.dp)
-            )
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.home_leaderboard_button),
+                    color = GoldDark,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 2.sp
+                )
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

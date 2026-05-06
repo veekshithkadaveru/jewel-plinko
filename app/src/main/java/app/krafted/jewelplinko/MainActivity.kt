@@ -38,19 +38,20 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("splash") {
-                            SplashScreen(onSplashComplete = {
-                                navController.navigate("home") {
-                                    popUpTo(
-                                        "splash"
-                                    ) { inclusive = true }
+                            val state by gameViewModel.uiState.collectAsState()
+                            SplashScreen(
+                                isDataLoaded = state.isDataLoaded,
+                                onSplashComplete = {
+                                    navController.navigate("home") {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
                                 }
-                            })
+                            )
                         }
                         composable("home") {
                             val state by gameViewModel.uiState.collectAsState()
                             HomeScreen(
-                                coinBalance = state.coinBalance,
-                                bestSingleWin = state.bestSingleWin,
+                                vm = gameViewModel,
                                 onPlayClicked = { navController.navigate("bet") },
                                 onLeaderboardClicked = { navController.navigate("leaderboard") }
                             )
@@ -74,6 +75,7 @@ class MainActivity : ComponentActivity() {
                         composable("game") {
                             GameScreen(
                                 onSessionComplete = { navController.navigate("result") },
+                                onBack = { navController.popBackStack() },
                                 vm = gameViewModel
                             )
                         }
@@ -92,7 +94,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onPlayAgain = {
                                     gameViewModel.resetSession()
-                                    navController.navigate("bet") { popUpTo("home") }
+                                    navController.navigate("bet") {
+                                        popUpTo("bet") { inclusive = true }
+                                    }
                                 }
                             )
                         }

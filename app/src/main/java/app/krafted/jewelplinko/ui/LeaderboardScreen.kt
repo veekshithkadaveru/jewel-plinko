@@ -28,10 +28,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.krafted.jewelplinko.R
 import app.krafted.jewelplinko.data.db.WinRecord
 import app.krafted.jewelplinko.viewmodel.GameViewModel
 import java.text.SimpleDateFormat
@@ -61,19 +63,23 @@ fun LeaderboardScreen(vm: GameViewModel, onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "BACK",
-                    color = Gold,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 2.sp,
+                Box(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
+                        .clip(RoundedCornerShape(8.dp))
                         .clickable { onBack() }
-                        .padding(8.dp)
-                )
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.back_button),
+                        color = Gold,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 2.sp
+                    )
+                }
                 Text(
-                    text = "LEADERBOARD",
+                    text = stringResource(R.string.leaderboard_title),
                     color = GoldShimmer,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
@@ -98,7 +104,7 @@ fun LeaderboardScreen(vm: GameViewModel, onBack: () -> Unit) {
             Spacer(Modifier.height(12.dp))
 
             Text(
-                text = "TOP 20 SINGLE DROPS",
+                text = stringResource(R.string.leaderboard_subtitle),
                 color = DimWhite,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -117,7 +123,7 @@ fun LeaderboardScreen(vm: GameViewModel, onBack: () -> Unit) {
             ) {
                 if (topWins.isEmpty()) {
                     Text(
-                        text = "NO WINS YET — DROP YOUR FIRST BALL",
+                        text = stringResource(R.string.leaderboard_empty),
                         color = DimWhite,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -171,7 +177,7 @@ private fun LeaderboardRow(rank: Int, record: WinRecord) {
 
         Image(
             painter = painterResource(record.symbolDrawableRes),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.result_symbol_desc),
             modifier = Modifier.size(28.dp)
         )
 

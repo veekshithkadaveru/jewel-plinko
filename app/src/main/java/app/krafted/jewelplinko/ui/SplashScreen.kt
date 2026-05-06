@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +38,7 @@ private val DeepBackground = Color(0xFF0B0220)
 private val Gold = Color(0xFFF6C66B)
 
 @Composable
-fun SplashScreen(onSplashComplete: () -> Unit) {
+fun SplashScreen(isDataLoaded: Boolean, onSplashComplete: () -> Unit) {
     var startAnimation by remember { mutableStateOf(false) }
 
     val alphaAnim by animateFloatAsState(
@@ -45,16 +47,19 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
         label = "alphaAnim"
     )
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(key1 = isDataLoaded) {
         startAnimation = true
         delay(2000)
-        onSplashComplete()
+        if (isDataLoaded) {
+            onSplashComplete()
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DeepBackground),
+            .background(DeepBackground)
+            .systemBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -64,7 +69,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
         ) {
             Image(
                 painter = painterResource(id = R.drawable.app_icon),
-                contentDescription = "App Logo",
+                contentDescription = stringResource(R.string.splash_logo_desc),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(160.dp)
@@ -74,7 +79,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "JEWEL PLINKO",
+                text = stringResource(R.string.app_name).uppercase(),
                 color = Gold,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,

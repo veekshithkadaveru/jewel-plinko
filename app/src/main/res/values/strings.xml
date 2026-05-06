@@ -1,3 +1,67 @@
 <resources>
     <string name="app_name">Jewel Plinko</string>
+    <string name="back_button">BACK</string>
+    <string name="coins_format">💎 %d</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_logo_desc">App Logo</string>
+
+    <!-- Home Screen -->
+    <string name="home_coins_label">COINS</string>
+    <string name="home_best_win_label">BEST WIN</string>
+    <string name="home_subtitle">PHYSICS GEMSTONE DROP</string>
+    <string name="home_play_button">PLAY</string>
+    <string name="home_leaderboard_button">LEADERBOARD</string>
+    <string name="home_claim_bonus">CLAIM +500</string>
+    <string name="home_reset_account">RESET BANKRUPT ACCOUNT</string>
+    <string name="home_enter_name_title">ENTER YOUR NAME</string>
+    <string name="home_enter_name_desc">Set a name for the leaderboard</string>
+    <string name="home_save_name">SAVE NAME</string>
+    <string name="home_name_input_label">Name (max 16 chars)</string>
+
+    <!-- Bet Screen -->
+    <string name="bet_title">PLACE YOUR BET</string>
+    <string name="bet_amount_label">BET AMOUNT</string>
+    <string name="bet_package_label">BALL PACKAGE</string>
+    <string name="bet_ball_singular">BALL</string>
+    <string name="bet_balls_plural">BALLS</string>
+    <string name="bet_per_ball_label">Bet per ball</string>
+    <string name="bet_count_label">Balls</string>
+    <string name="bet_total_cost_label">TOTAL COST</string>
+    <string name="bet_drop_button_singular">DROP BALL</string>
+    <string name="bet_drop_button_plural">DROP BALLS</string>
+    <string name="bet_not_enough_coins">NOT ENOUGH COINS</string>
+    <string name="bet_decrease_desc">Decrease Bet</string>
+    <string name="bet_increase_desc">Increase Bet</string>
+
+    <!-- Game Screen -->
+    <string name="game_coins">Coins: %d</string>
+    <string name="game_bet">Bet: %d</string>
+    <string name="game_balls">Balls: %1$d/%2$d</string>
+    <string name="game_aim_left">AIM &lt;</string>
+    <string name="game_drop">DROP</string>
+    <string name="game_aim_right">AIM &gt;</string>
+    <string name="game_quit_confirm_title">Quit Session?</string>
+    <string name="game_quit_confirm_text">Are you sure you want to quit? Unused balls will be refunded.</string>
+    <string name="game_quit_confirm_yes">QUIT</string>
+    <string name="game_quit_confirm_no">CANCEL</string>
+
+    <!-- Session Result Screen -->
+    <string name="result_title">SESSION COMPLETE</string>
+    <string name="result_new_best">NEW BEST WIN!</string>
+    <string name="result_your_name_label">YOUR NAME</string>
+    <string name="result_save_button">SAVE</string>
+    <string name="result_saved_button">SAVED</string>
+    <string name="result_total_spent">Total spent</string>
+    <string name="result_total_won">Total won</string>
+    <string name="result_net">NET</string>
+    <string name="result_play_again">PLAY AGAIN</string>
+    <string name="result_home">HOME</string>
+    <string name="result_ball_label">BALL #%d</string>
+    <string name="result_symbol_desc">Win Symbol</string>
+
+    <!-- Leaderboard Screen -->
+    <string name="leaderboard_title">LEADERBOARD</string>
+    <string name="leaderboard_subtitle">TOP 20 SINGLE DROPS</string>
+    <string name="leaderboard_empty">NO WINS YET — DROP YOUR FIRST BALL</string>
 </resources>
