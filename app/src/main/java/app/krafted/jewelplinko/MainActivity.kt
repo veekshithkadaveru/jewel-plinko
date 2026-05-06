@@ -14,7 +14,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import app.krafted.jewelplinko.ui.*
+import app.krafted.jewelplinko.ui.BetScreen
+import app.krafted.jewelplinko.ui.GameScreen
+import app.krafted.jewelplinko.ui.HomeScreen
+import app.krafted.jewelplinko.ui.LeaderboardScreen
+import app.krafted.jewelplinko.ui.SessionResultScreen
+import app.krafted.jewelplinko.ui.SplashScreen
 import app.krafted.jewelplinko.ui.theme.JewelPlinkoTheme
 import app.krafted.jewelplinko.viewmodel.GameViewModel
 
@@ -33,10 +38,19 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("splash") {
-                            SplashScreen(onSplashComplete = { navController.navigate("home") { popUpTo("splash") { inclusive = true } } })
+                            SplashScreen(onSplashComplete = {
+                                navController.navigate("home") {
+                                    popUpTo(
+                                        "splash"
+                                    ) { inclusive = true }
+                                }
+                            })
                         }
                         composable("home") {
+                            val state by gameViewModel.uiState.collectAsState()
                             HomeScreen(
+                                coinBalance = state.coinBalance,
+                                bestSingleWin = state.bestSingleWin,
                                 onPlayClicked = { navController.navigate("bet") },
                                 onLeaderboardClicked = { navController.navigate("leaderboard") }
                             )
@@ -46,7 +60,11 @@ class MainActivity : ComponentActivity() {
                             BetScreen(
                                 coinBalance = state.coinBalance,
                                 onStartSession = { bet, ballPackage ->
-                                    if (gameViewModel.startSession(bet = bet, ballPackage = ballPackage)) {
+                                    if (gameViewModel.startSession(
+                                            bet = bet,
+                                            ballPackage = ballPackage
+                                        )
+                                    ) {
                                         navController.navigate("game")
                                     }
                                 },
@@ -65,7 +83,11 @@ class MainActivity : ComponentActivity() {
                                 state = state,
                                 onBackToHome = {
                                     gameViewModel.resetSession()
-                                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                                    navController.navigate("home") {
+                                        popUpTo("home") {
+                                            inclusive = true
+                                        }
+                                    }
                                 },
                                 onPlayAgain = {
                                     gameViewModel.resetSession()
