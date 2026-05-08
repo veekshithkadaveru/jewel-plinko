@@ -3,7 +3,7 @@ package app.krafted.jewelplinko.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,120 +29,86 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.krafted.jewelplinko.R
 import app.krafted.jewelplinko.data.db.WinRecord
+import app.krafted.jewelplinko.ui.neon.BackPill
+import app.krafted.jewelplinko.ui.neon.Neon
+import app.krafted.jewelplinko.ui.neon.NeonBackground
+import app.krafted.jewelplinko.ui.neon.PulsingHalo
+import app.krafted.jewelplinko.ui.neon.SparkleField
+import app.krafted.jewelplinko.ui.neon.formatGrouped
 import app.krafted.jewelplinko.viewmodel.GameViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-private val DeepBackground = Color(0xFF0B0220)
-private val CardBackground = Color(0xFF160833)
-private val Gold = Color(0xFFF6C66B)
-private val GoldDark = Color(0xFFB8945A)
-private val GoldShimmer = Color(0xFFFFF1D0)
-private val DimWhite = Color(0xFFCCBBDD)
 
 @Composable
 fun LeaderboardScreen(vm: GameViewModel, onBack: () -> Unit) {
     LaunchedEffect(Unit) { vm.loadLeaderboard() }
     val topWins by vm.topWins.collectAsState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepBackground)
-            .padding(horizontal = 24.dp, vertical = 48.dp)
-    ) {
+    NeonBackground(bg = R.drawable.bg_neon2) {
+        SparkleField(count = 16, modifier = Modifier.fillMaxSize())
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { onBack() }
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.back_button),
-                        color = Gold,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 2.sp
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.leaderboard_title),
-                    color = GoldShimmer,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 3.sp,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.4f)
-                    .height(2.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Color.Transparent, Gold, Color.Transparent)
-                        )
-                    )
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            Text(
-                text = stringResource(R.string.leaderboard_subtitle),
-                color = DimWhite,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 2.sp
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(CardBackground)
-                    .border(1.dp, Gold.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (topWins.isEmpty()) {
+                BackPill(onBack = onBack)
+                Text(
+                    "BIGGEST WINS",
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                Box(modifier = Modifier.size(40.dp))
+            }
+
+            Box(contentAlignment = Alignment.Center) {
+                PulsingHalo(modifier = Modifier.size(140.dp), color = Color(0xFFFFB428))
+                Text("🏆", fontSize = 80.sp)
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            if (topWins.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text("💎", fontSize = 50.sp)
+                    Spacer(Modifier.height(12.dp))
                     Text(
-                        text = stringResource(R.string.leaderboard_empty),
-                        color = DimWhite,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 2.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(24.dp)
+                        "No wins yet — drop a ball to start!",
+                        color = Color(0x99FFFFFF),
+                        fontSize = 14.sp,
                     )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    ) {
-                        itemsIndexed(topWins) { index, record ->
-                            LeaderboardRow(rank = index + 1, record = record)
-                        }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 22.dp),
+                ) {
+                    itemsIndexed(topWins) { index, record ->
+                        LeaderboardRow(rank = index + 1, record = record)
+                        Spacer(Modifier.height(8.dp))
                     }
                 }
             }
@@ -152,7 +119,20 @@ fun LeaderboardScreen(vm: GameViewModel, onBack: () -> Unit) {
 @Composable
 private fun LeaderboardRow(rank: Int, record: WinRecord) {
     val isTop = rank == 1
-    val rowBackground = if (isTop) Gold.copy(alpha = 0.08f) else Color.Transparent
+    val medal = when (rank) {
+        1 -> "🥇"
+        2 -> "🥈"
+        3 -> "🥉"
+        else -> "#$rank"
+    }
+    val rowBg = if (isTop) {
+        Brush.horizontalGradient(
+            listOf(Color(0x40FFB428), Color(0x26FF50B4))
+        )
+    } else {
+        Brush.verticalGradient(listOf(Color(0x0FFFFFFF), Color(0x05FFFFFF)))
+    }
+    val rowBorder = if (isTop) Color(0x8CFFC828) else Color(0x33FFB4FF)
     val dateText = remember(record.timestampMillis) {
         SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(record.timestampMillis))
     }
@@ -160,54 +140,45 @@ private fun LeaderboardRow(rank: Int, record: WinRecord) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(rowBackground)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clip(RoundedCornerShape(14.dp))
+            .background(rowBg)
+            .border(if (isTop) 1.5.dp else 1.dp, rowBorder, RoundedCornerShape(14.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "#$rank",
-            color = if (isTop) GoldShimmer else GoldDark,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.5.sp,
-            modifier = Modifier.weight(0.6f)
+            medal,
+            color = if (isTop) Neon.GemGold else Color(0xCCFFFFFF),
+            fontSize = if (rank <= 3) 22.sp else 16.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.size(36.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
-
-        Image(
-            painter = painterResource(record.symbolDrawableRes),
-            contentDescription = stringResource(R.string.result_symbol_desc),
-            modifier = Modifier.size(28.dp)
-        )
-
         Spacer(Modifier.size(10.dp))
-
-        Column(modifier = Modifier.weight(1.6f)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    record.winnings.formatGrouped(),
+                    color = Neon.GemGold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black,
+                )
+                Text(
+                    " coins",
+                    color = Color(0xB3FFFFFF),
+                    fontSize = 12.sp,
+                )
+            }
             Text(
-                text = record.playerName,
-                color = GoldShimmer,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-            Text(
-                text = "${record.multiplier}x · $dateText",
-                color = DimWhite,
+                "${record.playerName} · ${record.multiplier}x · $dateText",
+                color = Color(0xA6FFFFFF),
                 fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.sp,
-                maxLines = 1
             )
         }
-
-        Text(
-            text = "+${record.winnings}",
-            color = Gold,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End
+        Image(
+            painter = painterResource(id = R.drawable.coin_bag),
+            contentDescription = null,
+            modifier = Modifier.size(36.dp),
         )
     }
 }

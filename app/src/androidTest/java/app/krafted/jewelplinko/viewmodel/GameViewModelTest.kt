@@ -36,20 +36,18 @@ class GameViewModelTest {
 
     @Test
     fun testInitialState() = runBlocking {
-        // Wait briefly for init block to load data
         delay(100)
         
         val state = viewModel.uiState.value
-        // By default on a fresh install, coinBalance should be 1000
         assertTrue("Coin balance should be loaded", state.coinBalance >= 0)
         assertEquals("Initial bet amount is 50", 50, state.betAmount)
         assertEquals("Initial ball package is 1", 1, state.ballPackage)
     }
 
     @Test
-    fun testUpdateBet() = runBlocking {
-        delay(100) // load state
-        viewModel.updateBet(100, 3)
+    fun testStartSessionUpdatesBet() = runBlocking {
+        delay(100)
+        viewModel.startSession(100, 3)
         val state = viewModel.uiState.value
         assertEquals(100, state.betAmount)
         assertEquals(3, state.ballPackage)
@@ -59,20 +57,16 @@ class GameViewModelTest {
     fun testRefundSession() = runBlocking {
         delay(100)
         
-        // Reset account to have exactly 1000 for predictability
         viewModel.resetBankruptAccount()
-        delay(100) // Let DB update
+        delay(100)
         
-        viewModel.updateBet(100, 3) // cost = 300
-        
-        val canStart = viewModel.startSession()
+        val canStart = viewModel.startSession(100, 3)
         assertTrue(canStart)
         
         var state = viewModel.uiState.value
         assertEquals(700, state.coinBalance)
         assertEquals(3, state.ballsRemaining)
         
-        // Now refund
         viewModel.refundSession()
         state = viewModel.uiState.value
         

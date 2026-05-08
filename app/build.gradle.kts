@@ -52,10 +52,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     
-    // Navigation
     implementation(libs.androidx.navigation.compose)
     
-    // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     "ksp"(libs.room.compiler)

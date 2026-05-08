@@ -11,7 +11,7 @@ object BoardLayout {
     private const val SLOT_BAND_FRAC = 0.14f
     private const val SLOT_GAP_FRAC = 0.01f
 
-    private val DEFAULT_MULTIPLIERS = intArrayOf(1, 3, 5, 10, 50, 10, 5, 3, 1)
+    private val DEFAULT_MULTIPLIERS = intArrayOf(-10, -5, 5, 10, 50, 10, 5, -5, -10)
     private val DEFAULT_SYMBOLS = intArrayOf(
         R.drawable.plin_sym_1,
         R.drawable.plin_sym_2,

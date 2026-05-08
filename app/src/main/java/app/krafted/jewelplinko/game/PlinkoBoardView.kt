@@ -47,8 +47,8 @@ class PlinkoBoardView @JvmOverloads constructor(
     @Volatile
     private var aimRange: ClosedFloatingPointRange<Float> = 0f..0f
 
-    private var backgroundBitmap: Bitmap? = null
     private var pegBitmap: Bitmap? = null
+    private var ballBitmap: Bitmap? = null
     private val symbolBitmaps = HashMap<Int, Bitmap>()
 
     private val srcRect = Rect()
@@ -84,6 +84,8 @@ class PlinkoBoardView @JvmOverloads constructor(
 
     init {
         holder.addCallback(this)
+        setZOrderOnTop(true)
+        holder.setFormat(android.graphics.PixelFormat.TRANSPARENT)
         isFocusable = true
     }
 
@@ -159,10 +161,11 @@ class PlinkoBoardView @JvmOverloads constructor(
 
     private fun rebuildBitmaps(width: Int, height: Int) {
         recycleBitmaps()
-        backgroundBitmap = decodeAndScale(R.drawable.bg_game, width, height)
         val pegSize = (BoardLayout.pegRadius(boardWidth) * 2.6f).toInt().coerceAtLeast(1)
         pegBitmap = decodeAndScale(R.drawable.peg_bitmap, pegSize, pegSize)
-        val symbolSize = (BoardLayout.ballRadius(boardWidth) * 2f).toInt().coerceAtLeast(1)
+        val ballSize = (BoardLayout.ballRadius(boardWidth) * 2f).toInt().coerceAtLeast(1)
+        ballBitmap = decodeAndScale(R.drawable.ball_custom, ballSize, ballSize)
+        val symbolSize = ballSize
         val symbolRes = intArrayOf(
             R.drawable.plin_sym_1,
             R.drawable.plin_sym_2,
@@ -196,10 +199,10 @@ class PlinkoBoardView @JvmOverloads constructor(
     }
 
     private fun recycleBitmaps() {
-        backgroundBitmap?.recycle()
-        backgroundBitmap = null
         pegBitmap?.recycle()
         pegBitmap = null
+        ballBitmap?.recycle()
+        ballBitmap = null
         for (b in symbolBitmaps.values) b.recycle()
         symbolBitmaps.clear()
     }
@@ -235,22 +238,11 @@ class PlinkoBoardView @JvmOverloads constructor(
     }
 
     private fun drawFrame(canvas: Canvas) {
-        drawBackground(canvas)
+        canvas.drawColor(Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR)
         drawSlotBand(canvas)
         drawPegs(canvas)
         drawAimIndicator(canvas)
         drawBalls(canvas)
-    }
-
-    private fun drawBackground(canvas: Canvas) {
-        val bg = backgroundBitmap
-        if (bg != null) {
-            srcRect.set(0, 0, bg.width, bg.height)
-            dstRect.set(0f, 0f, boardWidth, boardHeight)
-            canvas.drawBitmap(bg, srcRect, dstRect, null)
-        } else {
-            canvas.drawRect(0f, 0f, boardWidth, boardHeight, backgroundFallbackPaint)
-        }
     }
 
     private fun drawSlotBand(canvas: Canvas) {
@@ -322,8 +314,8 @@ class PlinkoBoardView @JvmOverloads constructor(
     }
 
     private fun drawBalls(canvas: Canvas) {
+        val bmp = ballBitmap ?: return
         for (ball in balls) {
-            val bmp = symbolBitmaps[ball.symbolDrawableRes] ?: continue
             val r = ball.radius
             val left = ball.x - r
             val top = ball.y - r

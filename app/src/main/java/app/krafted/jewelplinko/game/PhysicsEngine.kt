@@ -91,6 +91,7 @@ class PhysicsEngine(
     private fun resolveLanding(ball: Ball) {
         val slotsTop = BoardLayout.slotsTopY(boardHeight)
         if (ball.y < slotsTop) return
+        if (slots.isEmpty()) return
         val slot = slots.firstOrNull { it.contains(ball.x) } ?: slots.last()
         ball.landed = true
         ball.landedSlotIndex = slot.index

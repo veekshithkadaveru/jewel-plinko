@@ -39,7 +39,8 @@ data class GameUiState(
     val dailyBonusAvailable: Boolean = false,
     val playerName: String = "Player",
     val isDataLoaded: Boolean = false,
-    val lastDailyBonusClaimMillis: Long? = null
+    val lastDailyBonusClaimMillis: Long? = null,
+    val dailyBonusTimeRemainingMs: Long = 0
 )
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
@@ -65,8 +66,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 lastDailyBonusClaimMillis = null
             ).also { dao.upsertWallet(it) }
             val now = System.currentTimeMillis()
-            val bonusAvailable =
-                wallet.lastDailyBonusClaimMillis == null || (now - wallet.lastDailyBonusClaimMillis > 24 * 60 * 60 * 1000)
+            val timeSinceLastClaim = wallet.lastDailyBonusClaimMillis?.let { now - it } ?: Long.MAX_VALUE
+            val bonusAvailable = timeSinceLastClaim >= BONUS_COOLDOWN_MS
+            val timeRemaining = if (bonusAvailable) 0 else BONUS_COOLDOWN_MS - timeSinceLastClaim
             val bestWin = dao.getBestWin()
             _uiState.update {
                 it.copy(
@@ -75,8 +77,27 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                     playerName = wallet.playerName,
                     lastDailyBonusClaimMillis = wallet.lastDailyBonusClaimMillis,
                     dailyBonusAvailable = bonusAvailable,
+                    dailyBonusTimeRemainingMs = timeRemaining,
                     isDataLoaded = true
                 )
+            }
+        }
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(1000)
+                val current = _uiState.value
+                if (!current.dailyBonusAvailable && current.lastDailyBonusClaimMillis != null) {
+                    val now = System.currentTimeMillis()
+                    val timeSinceLastClaim = now - current.lastDailyBonusClaimMillis
+                    val bonusAvailable = timeSinceLastClaim >= BONUS_COOLDOWN_MS
+                    val timeRemaining = if (bonusAvailable) 0 else BONUS_COOLDOWN_MS - timeSinceLastClaim
+                    _uiState.update {
+                        it.copy(
+                            dailyBonusAvailable = bonusAvailable,
+                            dailyBonusTimeRemainingMs = timeRemaining
+                        )
+                    }
+                }
             }
         }
     }
@@ -167,9 +188,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             )
             val newBest = winnings > it.bestSingleWin
             val remaining = it.ballsRemaining
+            val newBalance = kotlin.math.max(0, it.coinBalance + winnings)
             it.copy(
                 sessionResults = it.sessionResults + result,
-                coinBalance = it.coinBalance + winnings,
+                coinBalance = newBalance,
                 bestSingleWin = if (newBest) winnings else it.bestSingleWin,
                 isNewBestWin = newBest,
                 isDropping = false,
@@ -263,7 +285,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 coinBalance = newBalance,
                 lastDailyBonusClaimMillis = now,
-                dailyBonusAvailable = false
+                dailyBonusAvailable = false,
+                dailyBonusTimeRemainingMs = BONUS_COOLDOWN_MS
             )
         }
         viewModelScope.launch {
@@ -295,6 +318,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     companion object {
+        const val BONUS_COOLDOWN_MS = 24 * 60 * 60 * 1000L
+
+        fun formatTimeRemaining(ms: Long): String {
+            if (ms <= 0) return ""
+            val hours = ms / (60 * 60 * 1000)
+            val minutes = (ms % (60 * 60 * 1000)) / (60 * 1000)
+            val seconds = (ms % (60 * 1000)) / 1000
+            return String.format("%02d:%02d:%02d", hours, minutes, seconds)
+        }
+
         val Factory = viewModelFactory {
             initializer {
                 GameViewModel(

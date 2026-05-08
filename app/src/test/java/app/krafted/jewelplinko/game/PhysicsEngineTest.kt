@@ -9,23 +9,20 @@ class PhysicsEngineTest {
     @Test
     fun testGravityAndMaxFallSpeed() {
         val engine = PhysicsEngine(emptyList(), emptyList(), 1000f, 1000f, Random(0))
-        val ball = Ball(500f, 0f, 20f, 1)
+        val ball = Ball(x = 500f, y = 0f, vx = 0f, vy = 0f, radius = 20f, symbolDrawableRes = 1)
 
-        engine.step(ball, 1f, 500f) // 1 second step
+        engine.step(ball, 1f, 500f)
         
-        // After 1 second, vy should be GRAVITY = 1800f, but capped at MAX_FALL_SPEED = 1400f
         assertEquals(PhysicsEngine.MAX_FALL_SPEED, ball.vy, 0.1f)
     }
 
     @Test
     fun testWallCollision() {
         val engine = PhysicsEngine(emptyList(), emptyList(), 1000f, 1000f, Random(0))
-        val ball = Ball(0f, 500f, 20f, 1)
-        ball.vx = -100f // Moving left into wall
+        val ball = Ball(x = 0f, y = 500f, vx = -100f, vy = 0f, radius = 20f, symbolDrawableRes = 1)
 
         engine.step(ball, 0.1f, 500f)
 
-        // Ball should bounce off left wall
         assertTrue("Ball should be inside left wall bounds", ball.x >= ball.radius)
         assertTrue("Ball should have positive x velocity after bounce", ball.vx > 0f)
     }
@@ -35,25 +32,20 @@ class PhysicsEngineTest {
         val pegs = listOf(Peg(500f, 500f, 10f))
         val engine = PhysicsEngine(pegs, emptyList(), 1000f, 1000f, Random(0))
         
-        // Drop ball directly on peg
-        val ball = Ball(500f, 480f, 10f, 1)
-        ball.vy = 100f
+        val ball = Ball(x = 500f, y = 480f, vx = 0f, vy = 100f, radius = 10f, symbolDrawableRes = 1)
 
-        engine.step(ball, 0.1f, 500f)
+        engine.step(ball, 0.016f, 500f)
 
-        // Ball should have collided and bounced (velocity changed or position adjusted)
         assertTrue("Ball should have been pushed away from peg", ball.y < 490f || ball.vy <= 0f)
     }
 
     @Test
     fun testLanding() {
-        val slots = listOf(PrizeSlot(0, 0f, 1000f, 1f))
+        val slots = listOf(PrizeSlot(index = 0, left = 0f, right = 1000f, top = 950f, bottom = 1000f, multiplier = 1, symbolDrawableRes = 1))
         val engine = PhysicsEngine(emptyList(), slots, 1000f, 1000f, Random(0))
         
-        val ball = Ball(500f, 900f, 20f, 1)
-        ball.vy = 100f
+        val ball = Ball(x = 500f, y = 900f, vx = 0f, vy = 100f, radius = 20f, symbolDrawableRes = 1)
         
-        // Step enough to land
         engine.step(ball, 1f, 500f)
         
         assertTrue("Ball should be landed", ball.landed)
